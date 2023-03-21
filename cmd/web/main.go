@@ -8,13 +8,13 @@ import (
 	"strings"
 )
 
-func main() {
-	type config struct {
-		addr      string
-		staticDir string
-	}
+type Config struct {
+	addr      string
+	staticDir string
+}
 
-	var cfg config
+func main() {
+	var cfg Config
 	flag.StringVar(&cfg.addr, "addr", ":4000", "HTTP network address")
 	flag.StringVar(&cfg.staticDir, "static-dir", "./ui/static", "Path to static assets")
 	flag.Parse()
