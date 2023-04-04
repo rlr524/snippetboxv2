@@ -9,7 +9,7 @@ import (
 
 func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
-		http.NotFound(w, r)
+		app.notFound(w)
 		return
 	}
 
@@ -25,22 +25,20 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 	// that ParseFiles is a variadic function in that it has in its function signature (filenames ...string)
 	ts, err := template.ParseFiles(files...)
 	if err != nil {
-		app.errorLog.Print(err.Error())
-		http.Error(w, "Internal Server Error", 500)
+		app.serverError(w, err)
 		return
 	}
 
 	err = ts.ExecuteTemplate(w, "base", nil)
 	if err != nil {
-		app.errorLog.Print(err.Error())
-		http.Error(w, "Internal Server Error", 500)
+		app.serverError(w, err)
 	}
 }
 
 func (app *Application) SnippetView(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 	if err != nil || id < 1 {
-		http.NotFound(w, r)
+		app.notFound(w)
 		return
 	}
 	fmt.Fprintf(w, "Display a specific snippet with ID %d...", id)
@@ -49,7 +47,7 @@ func (app *Application) SnippetView(w http.ResponseWriter, r *http.Request) {
 func (app *Application) SnippetCreate(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", "POST")
-		http.Error(w, "Method Not Allowed", 405)
+		app.clientError(w, http.StatusMethodNotAllowed)
 		return
 	}
 	w.Write([]byte("Create a new snippet..."))
