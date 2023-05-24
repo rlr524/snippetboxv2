@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/rlr524/snippetboxv2/internal/models"
-	"html/template"
 	"net/http"
 	"strconv"
 )
@@ -15,26 +14,36 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	files := []string{
-		"./ui/html/base.gohtml",
-		"./ui/html/partials/nav.gohtml",
-		"./ui/html/pages/home.gohtml",
-	}
-
-	// The parameter files... is a variadic parameter meaning it can refer to any number of parameters, in that the
-	// slice of file paths in files can be of any length. The ... is the "variadic operator" and
-	// works similar to the functionality of the ... spread operator in JavaScript. We can see in the doc
-	// that ParseFiles is a variadic function in that it has in its function signature (filenames ...string)
-	ts, err := template.ParseFiles(files...)
+	snippets, err := app.snippets.GetLatest()
 	if err != nil {
 		app.serverError(w, err)
 		return
 	}
 
-	err = ts.ExecuteTemplate(w, "base", nil)
-	if err != nil {
-		app.serverError(w, err)
+	for _, snippet := range snippets {
+		fmt.Fprintf(w, "%+v\n", snippet)
 	}
+
+	//files := []string{
+	//	"./ui/html/base.gohtml",
+	//	"./ui/html/partials/nav.gohtml",
+	//	"./ui/html/pages/home.gohtml",
+	//}
+
+	// The parameter files... is a variadic parameter meaning it can refer to any number of parameters, in that the
+	// slice of file paths in files can be of any length. The ... is the "variadic operator" and
+	// works similar to the functionality of the ... spread operator in JavaScript. We can see in the doc
+	// that ParseFiles is a variadic function in that it has in its function signature (filenames ...string)
+	//ts, err := template.ParseFiles(files...)
+	//if err != nil {
+	//	app.serverError(w, err)
+	//	return
+	//}
+
+	//err = ts.ExecuteTemplate(w, "base", nil)
+	//if err != nil {
+	//	app.serverError(w, err)
+	//}
 }
 
 func (app *Application) SnippetView(w http.ResponseWriter, r *http.Request) {

@@ -3,6 +3,7 @@ package models
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 )
 
@@ -22,6 +23,11 @@ type SnippetModel struct {
 // could be declared inside the SnippetModel struct, but doing dependency injection this way
 // essentially makes the functions static, meaning we don't need to use them with an instance of SnippetModel. This
 // is also a good paradigm for testing as it makes it easy to create an interface and mock it for unit testing.
+
+// We're not using an ORM, we're writing our own SQL statements and using the drivers directly via the database/sql
+// package and the mysql drivers package. This is a bit more verbose than using an ORM, but our code is
+// non-magical. The database/sql package works generally seamlessly with all popular SQL implementations
+// so the DB functions are portable if we decide to switch from MySQL to PostgreSQL or another popular SQL DB.
 
 // Insert takes in a title, some content, and an expiration number of days and returns an id and possibly an error
 func (m *SnippetModel) Insert(title string, content string, expires int) (int, error) {
@@ -103,6 +109,7 @@ func (m *SnippetModel) GetLatest() ([]*Snippet, error) {
 
 	// Initialize an empty slice to hold the Snippet structs
 	snippets := []*Snippet{}
+	fmt.Println("Snippets := []*Snippet{} ", snippets) // For testing
 
 	// Use rows.Next() to iterate through the rows in the result set. This prepares the first (and then each
 	// subsequent) row to be acted on by the rows.Scan() method. If iteration over all the rows completes, then
@@ -110,6 +117,7 @@ func (m *SnippetModel) GetLatest() ([]*Snippet, error) {
 	for rows.Next() {
 		// Create a pointer to a now zeroed Snippet struct
 		s := &Snippet{}
+		fmt.Println("s := &Snippet{} ", s) // For testing
 		// Use rows.Scan() to copy the values from each field in the row to the new Snippet object that
 		// has been created. Again, the arguments to row.Scan() must be pointers to the target to which to
 		// copy the data into, and the number of arguments must be exactly the same as the number of columns
@@ -118,8 +126,10 @@ func (m *SnippetModel) GetLatest() ([]*Snippet, error) {
 		if err != nil {
 			return nil, err
 		}
+		fmt.Println("s := &Snippet{} after scan -> ", s) // For testing
 		// Append the object to the slice of snippets
 		snippets = append(snippets, s)
+
 	}
 
 	// When the rows.Next() loop has finished, call rows.Err() to retrieve any error that was encountered
