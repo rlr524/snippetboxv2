@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/rlr524/snippetboxv2/internal/models"
+	"html/template"
 	"net/http"
 	"strconv"
 )
@@ -23,27 +24,6 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 	for _, snippet := range snippets {
 		fmt.Fprintf(w, "%+v\n", snippet)
 	}
-
-	//files := []string{
-	//	"./ui/html/base.gohtml",
-	//	"./ui/html/partials/nav.gohtml",
-	//	"./ui/html/pages/home.gohtml",
-	//}
-
-	// The parameter files... is a variadic parameter meaning it can refer to any number of parameters, in that the
-	// slice of file paths in files can be of any length. The ... is the "variadic operator" and
-	// works similar to the functionality of the ... spread operator in JavaScript. We can see in the doc
-	// that ParseFiles is a variadic function in that it has in its function signature (filenames ...string)
-	//ts, err := template.ParseFiles(files...)
-	//if err != nil {
-	//	app.serverError(w, err)
-	//	return
-	//}
-
-	//err = ts.ExecuteTemplate(w, "base", nil)
-	//if err != nil {
-	//	app.serverError(w, err)
-	//}
 }
 
 func (app *Application) SnippetView(w http.ResponseWriter, r *http.Request) {
@@ -64,8 +44,31 @@ func (app *Application) SnippetView(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	// Write the snippet data as a plain-text HTTP response body.
-	fmt.Fprintf(w, "%+v", snippet)
+
+	// Initialize a slice containing the paths to the view.gohtml file, plus the base layout and nav partial.
+	files := []string{
+		"./ui/html/base.gohtml",
+		"./ui/html/partials/nav.gohtml",
+		"./ui/html/pages/view.gohtml",
+	}
+
+	// Parse the template files
+	ts, err := template.ParseFiles(files...)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	// Create an instance of the TemplateData struct holding the snippet data.
+	data := &TemplateData{
+		Snippet: snippet,
+	}
+
+	// Execute the template files, passing in the TemplateData struct.
+	err = ts.ExecuteTemplate(w, "base", data)
+	if err != nil {
+		app.serverError(w, err)
+	}
 }
 
 func (app *Application) SnippetCreate(w http.ResponseWriter, r *http.Request) {

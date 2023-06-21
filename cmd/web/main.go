@@ -4,21 +4,20 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
 	"github.com/rlr524/snippetboxv2/internal/models"
 	"log"
 	"net/http"
 	"os"
 	"strings"
-
-	_ "github.com/go-sql-driver/mysql"
 )
 
 type Config struct {
-	addr      string
-	staticDir string
-	env       string
-	dsn       string
+	addr string
+	//staticDir string
+	env string
+	dsn string
 }
 
 type Application struct {
@@ -38,7 +37,7 @@ func main() {
 
 	dbPass := os.Getenv("DB_PASS")
 	flag.StringVar(&cfg.addr, "addr", ":4000", "HTTP network address")
-	flag.StringVar(&cfg.staticDir, "static-dir", "./ui/static", "Path to static assets")
+	//flag.StringVar(&cfg.staticDir, "static-dir", "./ui/static/", "Path to static assets")
 	flag.StringVar(&cfg.env, "env", "production", "Environment (development|staging|production)")
 	flag.StringVar(&cfg.dsn, "dsn", fmt.Sprintf("web:%s@tcp(lancer:3306)/snippetbox?parseTime=true", dbPass), "MySQL data source")
 	flag.Parse()
