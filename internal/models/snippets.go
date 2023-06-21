@@ -3,7 +3,6 @@ package models
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 	"time"
 )
 
@@ -109,7 +108,7 @@ func (m *SnippetModel) GetLatest() ([]*Snippet, error) {
 
 	// Initialize an empty slice to hold the Snippet structs
 	snippets := []*Snippet{}
-	fmt.Println("Snippets := []*Snippet{} ", snippets) // For testing
+	// fmt.Println("Snippets := []*Snippet{} ", snippets) // For testing
 
 	// Use rows.Next() to iterate through the rows in the result set. This prepares the first (and then each
 	// subsequent) row to be acted on by the rows.Scan() method. If iteration over all the rows completes, then
@@ -117,7 +116,7 @@ func (m *SnippetModel) GetLatest() ([]*Snippet, error) {
 	for rows.Next() {
 		// Create a pointer to a now zeroed Snippet struct
 		s := &Snippet{}
-		fmt.Println("s := &Snippet{} ", s) // For testing
+		// fmt.Println("s := &Snippet{} ", s) // For testing
 		// Use rows.Scan() to copy the values from each field in the row to the new Snippet object that
 		// has been created. Again, the arguments to row.Scan() must be pointers to the target to which to
 		// copy the data into, and the number of arguments must be exactly the same as the number of columns
@@ -126,7 +125,7 @@ func (m *SnippetModel) GetLatest() ([]*Snippet, error) {
 		if err != nil {
 			return nil, err
 		}
-		fmt.Println("s := &Snippet{} after scan -> ", s) // For testing
+		// fmt.Println("s := &Snippet{} after scan -> ", s) // For testing
 		// Append the object to the slice of snippets
 		snippets = append(snippets, s)
 
