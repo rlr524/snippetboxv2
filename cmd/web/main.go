@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"text/template"
 )
 
 type Config struct {
@@ -21,10 +22,11 @@ type Config struct {
 }
 
 type Application struct {
-	errorLog *log.Logger
-	infoLog  *log.Logger
-	cfg      Config
-	snippets *models.SnippetModel
+	errorLog      *log.Logger
+	infoLog       *log.Logger
+	cfg           Config
+	snippets      *models.SnippetModel
+	templateCache map[string]*template.Template
 }
 
 func main() {
@@ -39,7 +41,8 @@ func main() {
 	flag.StringVar(&cfg.addr, "addr", ":4000", "HTTP network address")
 	//flag.StringVar(&cfg.staticDir, "static-dir", "./ui/static/", "Path to static assets")
 	flag.StringVar(&cfg.env, "env", "production", "Environment (development|staging|production)")
-	flag.StringVar(&cfg.dsn, "dsn", fmt.Sprintf("web:%s@tcp(lancer:3306)/snippetbox?parseTime=true", dbPass), "MySQL data source")
+	flag.StringVar(&cfg.dsn, "dsn", fmt.Sprintf("web:%s@tcp(lancer:3306)/snippetbox?parseTime=true", dbPass),
+		"MySQL data source")
 	flag.Parse()
 
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
@@ -57,10 +60,17 @@ func main() {
 		}
 	}(db)
 
+	// Init a new template cache
+	templateCache, err := newTemplateCache()
+	if err != nil {
+		errorLog.Fatal(err)
+	}
+
 	app := &Application{
-		errorLog: errorLog,
-		infoLog:  infoLog,
-		snippets: &models.SnippetModel{DB: db},
+		errorLog:      errorLog,
+		infoLog:       infoLog,
+		snippets:      &models.SnippetModel{DB: db},
+		templateCache: templateCache,
 	}
 
 	srv := &http.Server{
