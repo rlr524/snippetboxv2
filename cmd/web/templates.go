@@ -28,15 +28,20 @@ func newTemplateCache() (map[string]*template.Template, error) {
 		// Extract the file name from the full file path and assign it to the name variable.
 		name := filepath.Base(page)
 
-		// Create a slice containing the file paths of the base template, any partials and the page.
-		files := []string{
-			"./ui/html/base.gohtml",
-			"./ui/html/partials/nav.gohtml",
-			page,
+		// Parse the base template file into the template set.
+		ts, err := template.ParseFiles("./ui/html/base.gohtml")
+		if err != nil {
+			return nil, err
 		}
 
-		// Parse the files into a template set.
-		ts, err := template.ParseFiles(files...)
+		// Call ParseGlob() on this template set to add any partials
+		ts, err = ts.ParseGlob("./ui/html/partials/*.gohtml")
+		if err != nil {
+			return nil, err
+		}
+
+		// Call ParseFiles() on this template set to add the page template
+		ts, err = ts.ParseFiles(page)
 		if err != nil {
 			return nil, err
 		}

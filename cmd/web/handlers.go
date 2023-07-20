@@ -4,12 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"github.com/rlr524/snippetboxv2/internal/models"
-	"html/template"
 	"net/http"
 	"strconv"
 )
 
-func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
+func (app *Application) home(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
 		app.notFound(w)
 		return
@@ -21,29 +20,12 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	files := []string{
-		"./ui/html/base.gohtml",
-		"./ui/html/partials/nav.gohtml",
-		"./ui/html/pages/home.gohtml",
-	}
-
-	ts, err := template.ParseFiles(files...)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-
-	data := &TemplateData{
+	app.render(w, http.StatusOK, "home.gohtml", &TemplateData{
 		Snippets: snippets,
-	}
-
-	err = ts.ExecuteTemplate(w, "base", data)
-	if err != nil {
-		app.serverError(w, err)
-	}
+	})
 }
 
-func (app *Application) SnippetView(w http.ResponseWriter, r *http.Request) {
+func (app *Application) snippetView(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 	if err != nil || id < 1 {
 		app.notFound(w)
@@ -62,33 +44,12 @@ func (app *Application) SnippetView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Initialize a slice containing the paths to the view.gohtml file, plus the base layout and nav partial.
-	files := []string{
-		"./ui/html/base.gohtml",
-		"./ui/html/partials/nav.gohtml",
-		"./ui/html/pages/view.gohtml",
-	}
-
-	// Parse the template files
-	ts, err := template.ParseFiles(files...)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-
-	// Create an instance of the TemplateData struct holding the snippet data.
-	data := &TemplateData{
+	app.render(w, http.StatusOK, "view.gohtml", &TemplateData{
 		Snippet: snippet,
-	}
-
-	// Execute the template files, passing in the TemplateData struct.
-	err = ts.ExecuteTemplate(w, "base", data)
-	if err != nil {
-		app.serverError(w, err)
-	}
+	})
 }
 
-func (app *Application) SnippetCreate(w http.ResponseWriter, r *http.Request) {
+func (app *Application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", "POST")
 		app.clientError(w, http.StatusMethodNotAllowed)
