@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"net/http"
 	"runtime/debug"
@@ -31,6 +32,8 @@ func (app *Application) notFound(w http.ResponseWriter) {
 	app.clientError(w, http.StatusNotFound)
 }
 
+// The render helper is used to write template data to a buffer then if there are no errors to the
+// http.ResponseWriter.
 func (app *Application) render(w http.ResponseWriter, status int, page string, data *TemplateData) {
 	// Retrieve the appropriate template set from the cache based on the page name. If no entry exists in the cache
 	// with the provided name, create a new error and call the serverError() helper method.
@@ -41,12 +44,22 @@ func (app *Application) render(w http.ResponseWriter, status int, page string, d
 		return
 	}
 
+	// Init a new buffer
+	buf := new(bytes.Buffer)
+
+	// Write the template to the buffer, instead of straight to the http.ResponseWriter. If there's an error,
+	// call the serverError() helper and return.
+	err := ts.ExecuteTemplate(buf, "base", data)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
 	// Write out the provided HTTP status code.
 	w.WriteHeader(status)
 
-	// Execute the template set and write the response body.
-	err := ts.ExecuteTemplate(w, "base", data)
-	if err != nil {
-		app.serverError(w, err)
-	}
+	// Write the contents of the buffer to the http.ResponseWriter, in this case passing the http.ResponseWriter
+	// to a function that takes in an io.Writer. Explicitly ignore any errors because any error cases have
+	// already been handled, and it is guaranteed that there is data in the buffer to write to the http.ResponseWriter.
+	_, _ = buf.WriteTo(w)
 }
