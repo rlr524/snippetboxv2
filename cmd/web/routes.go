@@ -2,7 +2,9 @@ package main
 
 import "net/http"
 
-func (app *Application) Routes() *http.ServeMux {
+// The Routes method instantiates a new ServeMux from the net/http package, sets the static file server directory,
+// invokes the NeuteredFileSystem function, and handles all routes, returning a http.Handler.
+func (app *Application) Routes() http.Handler {
 	mux := http.NewServeMux()
 
 	fileServer := http.FileServer(http.Dir("./ui/static/"))
@@ -14,5 +16,6 @@ func (app *Application) Routes() *http.ServeMux {
 	mux.HandleFunc("/snippet/view", app.snippetView)
 	mux.HandleFunc("/snippet/create", app.snippetCreate)
 
-	return mux
+	// Wrap the mux in the secureHeaders middleware as the "next" parameter
+	return secureHeaders(mux)
 }
