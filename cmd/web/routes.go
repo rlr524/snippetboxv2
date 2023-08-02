@@ -16,6 +16,8 @@ func (app *Application) Routes() http.Handler {
 	mux.HandleFunc("/snippet/view", app.snippetView)
 	mux.HandleFunc("/snippet/create", app.snippetCreate)
 
-	// Wrap the mux in the secureHeaders middleware as the "next" parameter
-	return secureHeaders(mux)
+	// Wrap the mux in the secureHeaders middleware as the "next" parameter;
+	// wrapped in the logRequest middleware;
+	// wrapped in the recoverPanic middleware.
+	return app.recoverPanic(app.logRequests(secureHeaders(mux)))
 }
