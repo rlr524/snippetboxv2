@@ -7,6 +7,8 @@ import (
 	"github.com/rlr524/snippetboxv2/internal/models"
 	"net/http"
 	"strconv"
+	"strings"
+	"unicode/utf8"
 )
 
 func (app *Application) home(w http.ResponseWriter, r *http.Request) {
@@ -81,6 +83,38 @@ func (app *Application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 	expires, err := strconv.Atoi(r.PostForm.Get("expires"))
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	// Init a map to hold any validation errors for the form fields.
+	fieldErrors := make(map[string]string)
+
+	// Check that the title value is not blank and is not more than 100 char long. If it fails either
+	// check, add a message to the errors map using the field name as the key.
+	if strings.TrimSpace(title) == "" {
+		fieldErrors["title"] = "This field cannot be blank"
+	} else if utf8.RuneCountInString(title) > 100 {
+		fieldErrors["title"] = "This field cannot be more than 100 characters long"
+	}
+
+	// Check that the content field isn't blank and is 4000 characters or fewer.
+	if strings.TrimSpace(content) == "" {
+		fieldErrors["content"] = "This field cannot be blank"
+	} else if utf8.RuneCountInString(content) > 4000 {
+		fieldErrors["content"] = "This field cannot be more than 4000 characters"
+	}
+
+	// Check that the expires value matches one of the permitted values
+	if expires != 1 && expires != 7 && expires != 365 {
+		fieldErrors["expires"] = "This field must be equal to 1, 7, or 365"
+	}
+
+	// If there are validation errors, dump them in a plain text http response and return from the handler.
+	if len(fieldErrors) > 0 {
+		_, err2 := fmt.Fprint(w, fieldErrors)
+		if err2 != nil {
+			return
+		}
 		return
 	}
 
