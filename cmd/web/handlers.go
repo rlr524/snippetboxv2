@@ -54,19 +54,36 @@ func (app *Application) snippetView(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *Application) snippetCreate(w http.ResponseWriter, r *http.Request) {
-	_, err := w.Write([]byte("Display the form for creating a new snippet..."))
-	if err != nil {
-		return
-	}
+	data := app.newTemplateData(r)
+
+	app.render(w, http.StatusOK, "create.gohtml", data)
 }
 
 func (app *Application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
-	// Dummy data
-	title := "Oh, snail"
-	content := "O snail\nClimb Mount Fuji\nBut slowly, slowly!\n\n- Kobayashi Issa"
-	expires := 7
+	// Call r.ParseForm(), which adds any data in the POST request bodies to the r.PostForm map.
+	// This works the same way for put and patch requests. If there are any errors, use the app.ClientError()
+	// helper to send a 400 Bad Request to the user.
+	r.Body = http.MaxBytesReader(w, r.Body, 4096)
 
-	// Pass the dummy data to the SnippetModel.insert() method, receiving the ID of a new record back
+	err := r.ParseForm()
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	// Use the r.PostForm.Get() method to retrieve the title and content from the r.PostForm map.
+	title := r.PostForm.Get("title")
+	content := r.PostForm.Get("content")
+
+	// The PostForm.Get() method always returns the form data as a string. However, we expect the "expires" value
+	// to be a number and want to represent it in code as an int. So manually convert the form data to an int
+	// using strconv.Atoi() and send a 400 if the conversion fails.
+	expires, err := strconv.Atoi(r.PostForm.Get("expires"))
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
 	id, err := app.snippets.Insert(title, content, expires)
 	if err != nil {
 		app.serverError(w, err)
