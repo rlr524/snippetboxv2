@@ -11,6 +11,13 @@ import (
 	"unicode/utf8"
 )
 
+type snippetCreateForm struct {
+	Title       string
+	Content     string
+	Expires     int
+	FieldErrors map[string]string
+}
+
 func (app *Application) home(w http.ResponseWriter, r *http.Request) {
 	snippets, err := app.snippets.GetLatest()
 	if err != nil {
@@ -58,6 +65,10 @@ func (app *Application) snippetView(w http.ResponseWriter, r *http.Request) {
 func (app *Application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 
+	data.Form = snippetCreateForm{
+		Expires: 365,
+	}
+
 	app.render(w, http.StatusOK, "create.gohtml", data)
 }
 
@@ -86,39 +97,45 @@ func (app *Application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// Init a map to hold any validation errors for the form fields.
-	fieldErrors := make(map[string]string)
+	// Create an instance of the snippetCreateForm struct containing the values from the form
+	// and an empty map for the validation errors.
+	form := snippetCreateForm{
+		Title:       r.PostForm.Get("title"),
+		Content:     r.PostForm.Get("content"),
+		Expires:     expires,
+		FieldErrors: map[string]string{},
+	}
 
 	// Check that the title value is not blank and is not more than 100 char long. If it fails either
 	// check, add a message to the errors map using the field name as the key.
 	if strings.TrimSpace(title) == "" {
-		fieldErrors["title"] = "This field cannot be blank"
+		form.FieldErrors["title"] = "This field cannot be blank"
 	} else if utf8.RuneCountInString(title) > 100 {
-		fieldErrors["title"] = "This field cannot be more than 100 characters long"
+		form.FieldErrors["title"] = "This field cannot be more than 100 characters long"
 	}
 
 	// Check that the content field isn't blank and is 4000 characters or fewer.
 	if strings.TrimSpace(content) == "" {
-		fieldErrors["content"] = "This field cannot be blank"
+		form.FieldErrors["content"] = "This field cannot be blank"
 	} else if utf8.RuneCountInString(content) > 4000 {
-		fieldErrors["content"] = "This field cannot be more than 4000 characters"
+		form.FieldErrors["content"] = "This field cannot be more than 4000 characters"
 	}
 
 	// Check that the expires value matches one of the permitted values
 	if expires != 1 && expires != 7 && expires != 365 {
-		fieldErrors["expires"] = "This field must be equal to 1, 7, or 365"
+		form.FieldErrors["expires"] = "This field must be equal to 1, 7, or 365"
 	}
 
-	// If there are validation errors, dump them in a plain text http response and return from the handler.
-	if len(fieldErrors) > 0 {
-		_, err2 := fmt.Fprint(w, fieldErrors)
-		if err2 != nil {
-			return
-		}
+	// If there are validation errors,redisplay the create.gohtml template, passing in the snippetCreateForm
+	// instance as dynamic data in the Form field.The unprocessableentity (422) code is used for validation errors.
+	if len(form.FieldErrors) > 0 {
+		data := app.newTemplateData(r)
+		data.Form = form
+		app.render(w, http.StatusUnprocessableEntity, "create.gohtml", data)
 		return
 	}
 
-	id, err := app.snippets.Insert(title, content, expires)
+	id, err := app.snippets.Insert(form.Title, form.Content, form.Expires)
 	if err != nil {
 		app.serverError(w, err)
 		return
