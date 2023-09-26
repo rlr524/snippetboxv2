@@ -5,17 +5,17 @@ import (
 	"fmt"
 	"github.com/julienschmidt/httprouter"
 	"github.com/rlr524/snippetboxv2/internal/models"
+	"github.com/rlr524/snippetboxv2/internal/validator"
 	"net/http"
 	"strconv"
-	"strings"
-	"unicode/utf8"
 )
 
 type snippetCreateForm struct {
-	Title       string
-	Content     string
-	Expires     int
-	FieldErrors map[string]string
+	Title   string
+	Content string
+	Expires int
+	// Embed the Validator struct
+	validator.Validator
 }
 
 func (app *Application) home(w http.ResponseWriter, r *http.Request) {
@@ -84,10 +84,6 @@ func (app *Application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// Use the r.PostForm.Get() method to retrieve the title and content from the r.PostForm map.
-	title := r.PostForm.Get("title")
-	content := r.PostForm.Get("content")
-
 	// The PostForm.Get() method always returns the form data as a string. However, we expect the "expires" value
 	// to be a number and want to represent it in code as an int. So manually convert the form data to an int
 	// using strconv.Atoi() and send a 400 if the conversion fails.
@@ -100,35 +96,20 @@ func (app *Application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 	// Create an instance of the snippetCreateForm struct containing the values from the form
 	// and an empty map for the validation errors.
 	form := snippetCreateForm{
-		Title:       r.PostForm.Get("title"),
-		Content:     r.PostForm.Get("content"),
-		Expires:     expires,
-		FieldErrors: map[string]string{},
+		Title:   r.PostForm.Get("title"),
+		Content: r.PostForm.Get("content"),
+		Expires: expires,
 	}
 
-	// Check that the title value is not blank and is not more than 100 char long. If it fails either
-	// check, add a message to the errors map using the field name as the key.
-	if strings.TrimSpace(title) == "" {
-		form.FieldErrors["title"] = "This field cannot be blank"
-	} else if utf8.RuneCountInString(title) > 100 {
-		form.FieldErrors["title"] = "This field cannot be more than 100 characters long"
-	}
+	// Validators
+	form.CheckField(validator.NotBlank(form.Title), "title", "This field cannot be blank")
+	form.CheckField(validator.MaxChars(form.Title, 100), "title",
+		"This field cannot be more than 100 characters long")
+	form.CheckField(validator.NotBlank(form.Content), "content", "This field cannot be blank")
+	form.CheckField(validator.PermittedInt(form.Expires, 1, 7, 365), "expires",
+		"This field must be equal to 1, 7, or 365")
 
-	// Check that the content field isn't blank and is 4000 characters or fewer.
-	if strings.TrimSpace(content) == "" {
-		form.FieldErrors["content"] = "This field cannot be blank"
-	} else if utf8.RuneCountInString(content) > 4000 {
-		form.FieldErrors["content"] = "This field cannot be more than 4000 characters"
-	}
-
-	// Check that the expires value matches one of the permitted values
-	if expires != 1 && expires != 7 && expires != 365 {
-		form.FieldErrors["expires"] = "This field must be equal to 1, 7, or 365"
-	}
-
-	// If there are validation errors,redisplay the create.gohtml template, passing in the snippetCreateForm
-	// instance as dynamic data in the Form field.The unprocessableentity (422) code is used for validation errors.
-	if len(form.FieldErrors) > 0 {
+	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Form = form
 		app.render(w, http.StatusUnprocessableEntity, "create.gohtml", data)
