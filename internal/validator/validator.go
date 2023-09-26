@@ -11,12 +11,12 @@ type Validator struct {
 }
 
 // Valid returns true if the FieldErrors map is empty.
-func (v Validator) Valid() bool {
+func (v *Validator) Valid() bool {
 	return len(v.FieldErrors) == 0
 }
 
 // AddFieldsError adds an error message to the FieldErrors map so long as no entry already exists for a given key.
-func (v Validator) AddFieldsError(key, message string) {
+func (v *Validator) AddFieldsError(key, message string) {
 	// Need to init the map first if it isn't already initialized
 	if v.FieldErrors == nil {
 		v.FieldErrors = make(map[string]string)
@@ -28,7 +28,7 @@ func (v Validator) AddFieldsError(key, message string) {
 }
 
 // CheckField adds an error message to the FieldErrors map only if a validation check is not ok.
-func (v Validator) CheckField(ok bool, key, message string) {
+func (v *Validator) CheckField(ok bool, key, message string) {
 	if !ok {
 		v.AddFieldsError(key, message)
 	}
