@@ -2,11 +2,40 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
+	"github.com/go-playground/form/v4"
 	"net/http"
 	"runtime/debug"
 	"time"
 )
+
+// The decodePostForm helper calls formDecoder.Decode() to unpack HTML form data to a target destination
+// and checks for an InvalidDecoderError error. It takes in a target destination of type any and returns an error.
+func (app *Application) decodePostForm(r *http.Request, dst any) error {
+	// Call ParseForm() on the request
+	err := r.ParseForm()
+	if err != nil {
+		return err
+	}
+
+	// Call Decode() on the decoder instance, passing in the target destination as the first parameter.
+	err = app.formDecoder.Decode(dst, r.PostForm)
+	if err != nil {
+		// If an invalid target destination is used, the Decode() method will return an error with the type
+		// *form.InvalidDecoderError. Use errors.As() to check for this and raise a panic rather than
+		// returning the error.
+		var invalidDecoderError *form.InvalidDecoderError
+
+		if errors.As(err, &invalidDecoderError) {
+			panic(err)
+		}
+
+		// For all other errors, return the error as normal.
+		return err
+	}
+	return nil
+}
 
 // The serverError helper writes an error message and stack trace to the errorLog, then sends a
 // generic 500 Internal Server Error response to the user. The debug.Stack() function gets a stack
@@ -66,7 +95,7 @@ func (app *Application) render(w http.ResponseWriter, status int, page string, d
 }
 
 // The newTemplateData helper returns a pointer to a TemplateData struct initialized with the current year.
-func (app *Application) newTemplateData(r *http.Request) *TemplateData {
+func (app *Application) newTemplateData(_ *http.Request) *TemplateData {
 	return &TemplateData{
 		CurrentYear: time.Now().Year(),
 	}

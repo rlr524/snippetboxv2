@@ -11,13 +11,18 @@ import (
 )
 
 type snippetCreateForm struct {
-	Title   string
-	Content string
-	Expires int
+	Title   string `form:"title"`
+	Content string `form:"content"`
+	Expires int    `form:"expires"`
 	// Embed the Validator struct
-	validator.Validator
+	validator.Validator `form:"-"`
 }
 
+/*
+description: View all active snippets
+route: /
+method: GET
+*/
 func (app *Application) home(w http.ResponseWriter, r *http.Request) {
 	snippets, err := app.snippets.GetLatest()
 	if err != nil {
@@ -33,6 +38,11 @@ func (app *Application) home(w http.ResponseWriter, r *http.Request) {
 	app.render(w, http.StatusOK, "home.gohtml", data)
 }
 
+/*
+description: View a single snippet
+route: /snippet/view/:id
+method: GET
+*/
 func (app *Application) snippetView(w http.ResponseWriter, r *http.Request) {
 	// When httprouter is parsing a request, the values of any named parameters will be stored in the request context.
 	params := httprouter.ParamsFromContext(r.Context())
@@ -62,6 +72,11 @@ func (app *Application) snippetView(w http.ResponseWriter, r *http.Request) {
 	app.render(w, http.StatusOK, "view.gohtml", data)
 }
 
+/*
+description: View the create a snippet form
+route: /snippet/create
+method: GET
+*/
 func (app *Application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 
@@ -72,33 +87,19 @@ func (app *Application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 	app.render(w, http.StatusOK, "create.gohtml", data)
 }
 
+/*
+description: Submit the create a snippet form and redirect to the created snippet at /snippet/view/:idOfNewSnippet
+route: /snippet/create
+method: POST
+*/
 func (app *Application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
-	// Call r.ParseForm(), which adds any data in the POST request bodies to the r.PostForm map.
-	// This works the same way for put and patch requests. If there are any errors, use the app.ClientError()
-	// helper to send a 400 Bad Request to the user.
-	r.Body = http.MaxBytesReader(w, r.Body, 4096)
+	// Declare a new empty instance of the snippetCreateForm struct.
+	var form snippetCreateForm
 
-	err := r.ParseForm()
+	err := app.decodePostForm(r, &form)
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
 		return
-	}
-
-	// The PostForm.Get() method always returns the form data as a string. However, we expect the "expires" value
-	// to be a number and want to represent it in code as an int. So manually convert the form data to an int
-	// using strconv.Atoi() and send a 400 if the conversion fails.
-	expires, err := strconv.Atoi(r.PostForm.Get("expires"))
-	if err != nil {
-		app.clientError(w, http.StatusBadRequest)
-		return
-	}
-
-	// Create an instance of the snippetCreateForm struct containing the values from the form
-	// and an empty map for the validation errors.
-	form := snippetCreateForm{
-		Title:   r.PostForm.Get("title"),
-		Content: r.PostForm.Get("content"),
-		Expires: expires,
 	}
 
 	// Validators

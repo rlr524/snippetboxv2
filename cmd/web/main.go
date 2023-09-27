@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+	"github.com/go-playground/form/v4"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
 	"github.com/rlr524/snippetboxv2/internal/models"
@@ -27,6 +28,7 @@ type Application struct {
 	cfg           Config
 	snippets      *models.SnippetModel
 	templateCache map[string]*template.Template
+	formDecoder   *form.Decoder
 }
 
 func main() {
@@ -66,11 +68,15 @@ func main() {
 		errorLog.Fatal(err)
 	}
 
+	// Initialize a new decoder instance
+	formDecoder := form.NewDecoder()
+
 	app := &Application{
 		errorLog:      errorLog,
 		infoLog:       infoLog,
 		snippets:      &models.SnippetModel{DB: db},
 		templateCache: templateCache,
+		formDecoder:   formDecoder,
 	}
 
 	srv := &http.Server{
