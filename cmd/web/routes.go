@@ -24,10 +24,12 @@ func (app *Application) Routes() http.Handler {
 		http.StripPrefix("/static",
 			NeuteredFileSystem(fileServer)))
 
-	r.HandlerFunc(http.MethodGet, "/", app.home)
-	r.HandlerFunc(http.MethodGet, "/snippet/view/:id", app.snippetView)
-	r.HandlerFunc(http.MethodGet, "/snippet/create", app.snippetCreate)
-	r.HandlerFunc(http.MethodPost, "/snippet/create", app.snippetCreatePost)
+	dynamic := alice.New(app.sessionManager.LoadAndSave)
+
+	r.Handler(http.MethodGet, "/", dynamic.ThenFunc(app.home))
+	r.Handler(http.MethodGet, "/snippet/view/:id", dynamic.ThenFunc(app.snippetView))
+	r.Handler(http.MethodGet, "/snippet/create", dynamic.ThenFunc(app.snippetCreate))
+	r.Handler(http.MethodPost, "/snippet/create", dynamic.ThenFunc(app.snippetCreatePost))
 
 	// Middleware chain containing the standard middleware which is used for every request
 	standard := alice.New(app.recoverPanic, app.logRequests, secureHeaders)

@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+	"github.com/alexedwards/scs/mysqlstore"
+	"github.com/alexedwards/scs/v2"
 	"github.com/go-playground/form/v4"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
@@ -13,6 +15,7 @@ import (
 	"os"
 	"strings"
 	"text/template"
+	"time"
 )
 
 type Config struct {
@@ -23,12 +26,13 @@ type Config struct {
 }
 
 type Application struct {
-	errorLog      *log.Logger
-	infoLog       *log.Logger
-	cfg           Config
-	snippets      *models.SnippetModel
-	templateCache map[string]*template.Template
-	formDecoder   *form.Decoder
+	errorLog       *log.Logger
+	infoLog        *log.Logger
+	cfg            Config
+	snippets       *models.SnippetModel
+	templateCache  map[string]*template.Template
+	formDecoder    *form.Decoder
+	sessionManager *scs.SessionManager
 }
 
 func main() {
@@ -43,7 +47,7 @@ func main() {
 	flag.StringVar(&cfg.addr, "addr", ":4000", "HTTP network address")
 	//flag.StringVar(&cfg.staticDir, "static-dir", "./ui/static/", "Path to static assets")
 	flag.StringVar(&cfg.env, "env", "production", "Environment (development|staging|production)")
-	flag.StringVar(&cfg.dsn, "dsn", fmt.Sprintf("web:%s@tcp(localhost:3306)/snippetbox?parseTime=true", dbPass),
+	flag.StringVar(&cfg.dsn, "dsn", fmt.Sprintf("web:%s@tcp(lancer:3306)/snippetbox?parseTime=true", dbPass),
 		"MySQL data source")
 	flag.Parse()
 
@@ -71,12 +75,19 @@ func main() {
 	// Initialize a new decoder instance
 	formDecoder := form.NewDecoder()
 
+	// Initialize a new session manager and configure it to use the MySQL database
+	// as the session store and set a lifetime of 12 hours.
+	sessionManager := scs.New()
+	sessionManager.Store = mysqlstore.New(db)
+	sessionManager.Lifetime = 12 * time.Hour
+
 	app := &Application{
-		errorLog:      errorLog,
-		infoLog:       infoLog,
-		snippets:      &models.SnippetModel{DB: db},
-		templateCache: templateCache,
-		formDecoder:   formDecoder,
+		errorLog:       errorLog,
+		infoLog:        infoLog,
+		snippets:       &models.SnippetModel{DB: db},
+		templateCache:  templateCache,
+		formDecoder:    formDecoder,
+		sessionManager: sessionManager,
 	}
 
 	srv := &http.Server{
