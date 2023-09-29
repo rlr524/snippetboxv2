@@ -20,6 +20,10 @@
 </header>
 {{template "nav" .}}
 <main>
+    <!-- Display the flash toast message if one exists -->
+    {{with .Flash}}
+        <div class="flash">{{.}}</div>
+    {{end}}
     {{template "main" .}}
 </main>
 <footer>Powered by <a href="https://go.dev" target="_blank">Go</a> in {{.CurrentYear}}</footer>

@@ -123,6 +123,10 @@ func (app *Application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	// Use the scs.Put() method to pass in the current request context, and
+	// add a string value and a key to the session data.
+	app.sessionManager.Put(r.Context(), "flash", "Snippet successfully created")
+
 	// Redirect the user to the relevant page for the snippet
 	http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
 }
