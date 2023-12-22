@@ -8,6 +8,7 @@ import (
 	"github.com/rlr524/snippetboxv2/internal/validator"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 type snippetCreateForm struct {
@@ -129,4 +130,59 @@ func (app *Application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 
 	// Redirect the user to the relevant page for the snippet
 	http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
+}
+
+/*
+description: Display an HTML form for signing up a new user
+route: /user/signup
+method: GET
+*/
+func (app *Application) userSignup(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "Display an HTML form for signing up a new user...")
+}
+
+/*
+description: Create a new user
+route: /user/signup
+method: POST
+*/
+func (app *Application) userSignupPost(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "Create a new user...")
+}
+
+/*
+description: Display an HTML form for logging in a user
+route: /user/login
+method: GET
+*/
+func (app *Application) userLogin(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "Display an HTML form for logging in a new user...")
+}
+
+/*
+description: Authenticate and login the user
+route: /user/login
+method: POST
+*/
+func (app *Application) userLoginPost(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "Authenticate and login the user...")
+}
+
+/*
+description: Logout the user
+route: /user/logout
+method: POST
+*/
+func (app *Application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "Logout the user...")
+}
+
+func (app *Application) neuteredFileSystem(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.URL.Path, "/") {
+			http.NotFound(w, r)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }

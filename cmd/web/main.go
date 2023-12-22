@@ -14,7 +14,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strings"
 	"text/template"
 	"time"
 )
@@ -131,12 +130,12 @@ func openDB(dsn string) (*sql.DB, error) {
 	return db, nil
 }
 
-func NeuteredFileSystem(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.HasSuffix(r.URL.Path, "/") {
-			http.NotFound(w, r)
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
-}
+//func neuteredFileSystem(next http.Handler) http.Handler {
+//	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+//		if strings.HasSuffix(r.URL.Path, "/") {
+//			http.NotFound(w, r)
+//			return
+//		}
+//		next.ServeHTTP(w, r)
+//	})
+//}
