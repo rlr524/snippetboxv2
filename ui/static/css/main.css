@@ -207,7 +207,9 @@ textarea {
 }
 
 button {
-    background: none;
+    height: 44px;
+    width: 44px;
+    background: #62cb31;
     padding: 0;
     border: none;
     color: #62CB31;

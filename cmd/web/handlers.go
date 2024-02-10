@@ -19,6 +19,13 @@ type snippetCreateForm struct {
 	validator.Validator `form:"-"`
 }
 
+type userSignUpForm struct {
+	Name                string `form:"name"`
+	Email               string `form:"email"`
+	Password            string `form:"password"`
+	validator.Validator `form:"-"`
+}
+
 /*
 description: View all active snippets
 route: /
@@ -138,7 +145,9 @@ route: /user/signup
 method: GET
 */
 func (app *Application) userSignup(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Display an HTML form for signing up a new user...")
+	data := app.newTemplateData(r)
+	data.Form = userSignUpForm{}
+	app.render(w, http.StatusOK, "signup.gohtml", data)
 }
 
 /*
