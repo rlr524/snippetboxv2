@@ -28,6 +28,11 @@ type SnippetModel struct {
 // non-magical. The database/sql package works generally seamlessly with all popular SQL implementations
 // so the DB functions are portable if we decide to switch from MySQL to PostgreSQL or another popular SQL DB.
 
+// On the other hand, we're mixing business logic with the database in a pattern referred to as the "Active Record"
+// pattern. This pattern isn't bad for a small learning app like this, but it tightly couples the application and
+// the database and should be replaced by something more robust that decouples the database from the application,
+// like the "Repository" pattern.
+
 // Insert takes in a title, some content, and an expiration number of days and returns an id and possibly an error
 func (m *SnippetModel) Insert(title string, content string, expires int) (int, error) {
 	// SQL statement that will be executed; use ? placeholders for values
