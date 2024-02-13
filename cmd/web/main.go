@@ -132,6 +132,8 @@ func openDB(dsn string) (*sql.DB, error) {
 	return db, nil
 }
 
+// TODO: Change input elements in signup and create to button elements
+
 //func neuteredFileSystem(next http.Handler) http.Handler {
 //	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 //		if strings.HasSuffix(r.URL.Path, "/") {
