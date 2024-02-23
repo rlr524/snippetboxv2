@@ -3,11 +3,11 @@
 {{define "main"}}
 <form action="/user/signup" method="post" novalidate>
     <div>
-        <label for="name">Name:</label>
+        <label for="username">Name:</label>
         {{with .Form.FieldErrors.name}}
             <label class="error">{{.}}</label>
         {{end}}
-        <input type="text"  name="name" value="{{.Form.Name}}">
+        <input type="text"  name="username" value="{{.Form.Name}}">
     </div>
     <div>
         <label for="email">Email:</label>
