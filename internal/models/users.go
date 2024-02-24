@@ -11,7 +11,7 @@ import (
 
 type User struct {
 	ID             int
-	UserName       string
+	Name           string
 	Email          string
 	HashedPassword []byte
 	Created        time.Time
@@ -23,17 +23,25 @@ type UserModel struct {
 }
 
 // Insert adds a new record to the "users" table.
-func (m *UserModel) Insert(username, email, password string) error {
+func (m *UserModel) Insert(name, email, password string) error {
 	// Create a bcrypt hash of the plain-text password.
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 12)
 	if err != nil {
 		return err
 	}
 
-	stmt := `INSERT INTO users (username, email, hashed_password, created) VALUES(?, ?, ?, UTC_TIMESTAMP())`
+	stmt := `INSERT INTO users (name, email, hashed_password, created) VALUES(?, ?, ?, UTC_TIMESTAMP())`
 
 	// Use the Exec() method to insert the user details and hashed password into the users table.
-	_, err = m.DB.Exec(stmt, username, email, string(hashedPassword))
+	_, err = m.DB.Exec(stmt, name, email, string(hashedPassword))
+	// Why not create a method to check the db for the email vs depending on the MySQL error number, which
+	// MySQL could change and tightly couples this method to MySQL? Because that method introduces a race
+	// condition to the application. If two users try to sign up with the same email at exactly the same time,
+	// both submissions will pass the validation check but only one INSERT statement will succeed and the other
+	// will violsate the UNIQUE constraint set on email in the database and get a 500 error. Neither case is
+	// optimal and even though the race condition is extremely unlikely and fairly benign, this is all probably a
+	// good reason why we should be using an ORM instead of rolling our own SQL.
+	// TODO: At some point, determine how to optimize this. Use an ORM?
 	if err != nil {
 		// If this returns an error, we use the errors.As() function to check whether the error has the type
 		// *mysql.MySQLError. If it does, the error will be assigned to the mySQLError variable. We can then check
