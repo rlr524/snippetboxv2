@@ -35,7 +35,7 @@ func newTemplateCache() (map[string]*template.Template, error) {
 
 	// Use the filepath.Glob() function to get a slice of all file paths that match the app's suffix pattern. This
 	// will provide a slice of all the file paths for the application "page" templates.
-	pages, err := filepath.Glob("./ui/html/pages/*.gohtml")
+	pages, err := filepath.Glob("./ui/html/pages/*.go.html")
 	if err != nil {
 		return nil, err
 	}
@@ -48,13 +48,13 @@ func newTemplateCache() (map[string]*template.Template, error) {
 		// The templateFuncMap must be registered with the template set before calling the ParseFiles() method.
 		// To do this, use template.New() to create an empty template set, use the template.Funcs() method to register
 		// the template,FuncMap, and then parse the file as normal.
-		ts, err := template.New(name).Funcs(functions).ParseFiles("./ui/html/base.gohtml")
+		ts, err := template.New(name).Funcs(functions).ParseFiles("./ui/html/base.go.html")
 		if err != nil {
 			return nil, err
 		}
 
 		// Call ParseGlob() on this template set to add any partials
-		ts, err = ts.ParseGlob("./ui/html/partials/*.gohtml")
+		ts, err = ts.ParseGlob("./ui/html/partials/*.go.html")
 		if err != nil {
 			return nil, err
 		}

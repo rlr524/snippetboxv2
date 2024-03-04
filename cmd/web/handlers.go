@@ -26,6 +26,12 @@ type userSignUpForm struct {
 	validator.Validator `form:"-"`
 }
 
+type userLoginForm struct {
+	Email               string `form:"email"`
+	Password            string `form:"password"`
+	validator.Validator `form:"_"`
+}
+
 /*
 description: View all active snippets
 route: /
@@ -43,7 +49,7 @@ func (app *Application) home(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.Snippets = snippets
 
-	app.render(w, http.StatusOK, "home.gohtml", data)
+	app.render(w, http.StatusOK, "home.go.html", data)
 }
 
 /*
@@ -77,7 +83,7 @@ func (app *Application) snippetView(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.Snippet = snippet
 
-	app.render(w, http.StatusOK, "view.gohtml", data)
+	app.render(w, http.StatusOK, "view.go.html", data)
 }
 
 /*
@@ -92,7 +98,7 @@ func (app *Application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 		Expires: 365,
 	}
 
-	app.render(w, http.StatusOK, "create.gohtml", data)
+	app.render(w, http.StatusOK, "create.go.html", data)
 }
 
 /*
@@ -121,7 +127,7 @@ func (app *Application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Form = form
-		app.render(w, http.StatusUnprocessableEntity, "create.gohtml", data)
+		app.render(w, http.StatusUnprocessableEntity, "create.go.html", data)
 		return
 	}
 
@@ -147,7 +153,7 @@ method: GET
 func (app *Application) userSignup(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.Form = userSignUpForm{}
-	app.render(w, http.StatusOK, "signup.gohtml", data)
+	app.render(w, http.StatusOK, "signup.go.html", data)
 }
 
 /*
@@ -179,7 +185,7 @@ func (app *Application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Form = form
-		app.render(w, http.StatusUnprocessableEntity, "signup.gohtml", data)
+		app.render(w, http.StatusUnprocessableEntity, "signup.go.html", data)
 		return
 	}
 
@@ -190,7 +196,7 @@ func (app *Application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 			form.AddFieldsError("email", "Email address is already in use")
 			data := app.newTemplateData(r)
 			data.Form = form
-			app.render(w, http.StatusUnprocessableEntity, "signup.gohtml", data)
+			app.render(w, http.StatusUnprocessableEntity, "signup.go.html", data)
 		} else {
 			app.serverError(w, err)
 		}
@@ -210,7 +216,9 @@ route: /user/login
 method: GET
 */
 func (app *Application) userLogin(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Display an HTML form for logging in a new user...")
+	data := app.newTemplateData(r)
+	data.Form = userLoginForm{}
+	app.render(w, http.StatusOK, "login.go.html", data)
 }
 
 /*
@@ -219,7 +227,59 @@ route: /user/login
 method: POST
 */
 func (app *Application) userLoginPost(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Authenticate and login the user...")
+	// Decode the form data intio the userLoginForm struct
+	var form userLoginForm
+
+	err := app.decodePostForm(r, &form)
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+	// Do some validation checks on the form.
+	// Check that both the email and the password are provided, and also check the
+	// format of the email address as a UX nicety (in case the user makes a typo).
+	form.CheckField(validator.NotBlank(form.Email), "email", "This field cannot be blank")
+	form.CheckField(validator.Matches(form.Email, validator.EmailRX), "email", "This must be a valid "+
+		"email address")
+	form.CheckField(validator.NotBlank(form.Password), "password", "This field cannot be blank")
+
+	if !form.Valid() {
+		data := app.newTemplateData(r)
+		data.Form = form
+		app.render(w, http.StatusUnprocessableEntity, "login.go.html", data)
+		return
+	}
+
+	// Check whether the credentials are valid.
+	// If they're not, add a generic non-field message and redisplay the login page.
+	id, err := app.users.Authenticate(form.Email, form.Password)
+	if err != nil {
+		if errors.Is(err, models.ErrInvalidCredentials) {
+			form.AddNonFieldError("Email or password is incorrect")
+
+			data := app.newTemplateData(r)
+			data.Form = form
+			app.render(w, http.StatusUnprocessableEntity, "login.go.html", data)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	// Use the RenewToken() method on the current session to change the session ID.
+	// It's good practice to generate a new session ID when the authentication state or
+	// privilege levels change for the user (e.g. login and logout operations).
+	err = app.sessionManager.RenewToken(r.Context())
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	// Add the ID of the current user to the session, so that they are now logged in.
+	app.sessionManager.Put(r.Context(), "authenticatedUserID", id)
+
+	// Redirect the user to the create snippet page
+	http.Redirect(w, r, "/snippet/create", http.StatusSeeOther)
 }
 
 /*
