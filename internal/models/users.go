@@ -38,7 +38,7 @@ func (m *UserModel) Insert(name, email, password string) error {
 	// MySQL could change and tightly couples this method to MySQL? Because that method introduces a race
 	// condition to the application. If two users try to sign up with the same email at exactly the same time,
 	// both submissions will pass the validation check but only one INSERT statement will succeed and the other
-	// will violsate the UNIQUE constraint set on email in the database and get a 500 error. Neither case is
+	// will violate the UNIQUE constraint set on email in the database and get a 500 error. Neither case is
 	// optimal and even though the race condition is extremely unlikely and fairly benign, this is all probably a
 	// good reason why we should be using an ORM instead of rolling our own SQL.
 	// TODO: At some point, determine how to optimize this. Use an ORM?
