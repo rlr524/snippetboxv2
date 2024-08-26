@@ -100,5 +100,12 @@ func (app *Application) newTemplateData(r *http.Request) *TemplateData {
 		CurrentYear: time.Now().Year(),
 		// Add the flash toast message to the template data, if one exists.
 		Flash: app.sessionManager.PopString(r.Context(), "flash"),
+		// Add the authentication status to the template data.
+		IsAuthenticated: app.isAuthenticated(r),
 	}
+}
+
+// The isAuthenticated helper returns true id the current request is from an authenticated user, otherwise false.
+func (app *Application) isAuthenticated(r *http.Request) bool {
+	return app.sessionManager.Exists(r.Context(), "authenticatedUserID")
 }

@@ -288,7 +288,20 @@ route: /user/logout
 method: POST
 */
 func (app *Application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Logout the user...")
+	// Use the RenewToken() method on the current session to change the session ID.
+	err := app.sessionManager.RenewToken(r.Context())
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	// Remove the authenticatedUserID from the session data so the user is logged out.
+	app.sessionManager.Remove(r.Context(), "authenticatedUserID")
+
+	// Add a flash message to the session to confirm to the user that they've been logged out.
+	app.sessionManager.Put(r.Context(), "flash", "You've been logged out successfully.")
+
+	// Redirect the user to the application home page.
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func (app *Application) neuteredFileSystem(next http.Handler) http.Handler {

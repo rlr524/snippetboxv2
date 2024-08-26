@@ -7,11 +7,12 @@ import (
 )
 
 type Snippet struct {
-	ID      int
-	Title   string
-	Content string
-	Created time.Time
-	Expires time.Time
+	ID        int
+	Title     string
+	Content   string
+	Created   time.Time
+	Expires   time.Time
+	CreatedBy User
 }
 
 type SnippetModel struct {
@@ -109,10 +110,12 @@ func (m *SnippetModel) GetLatest() ([]*Snippet, error) {
 	// Defer rows.Close() to ensure the sql.Rows() result set is always properly closed before the Latest()
 	// method returns. The defer statement should come after checking for an error from the Query() method,
 	// otherwise if Query() returns an error, the app will panic trying to close a nil result set.
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		_ = rows.Close()
+	}(rows)
 
 	// Initialize an empty slice to hold the Snippet structs
-	snippets := []*Snippet{}
+	var snippets []*Snippet
 	// fmt.Println("Snippets := []*Snippet{} ", snippets) // For testing
 
 	// Use rows.Next() to iterate through the rows in the result set. This prepares the first (and then each

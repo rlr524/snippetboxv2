@@ -9,11 +9,13 @@ import (
 
 // TemplateData acts as the holding structure for any dynamic data that is passed to the html templates.
 type TemplateData struct {
-	CurrentYear int
-	Snippet     *models.Snippet
-	Snippets    []*models.Snippet
-	Form        any
-	Flash       string
+	CurrentYear     int
+	Snippet         *models.Snippet
+	Snippets        []*models.Snippet
+	Form            any
+	Flash           string
+	IsAuthenticated bool
+	User            *models.User
 }
 
 // The humanDate() function returns a formatted string representation of a time.Time object.
